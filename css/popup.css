@@ -1,0 +1,85 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  --body-width: 400px;
+  --text-color: #409eff;
+  background: #fff;
+  font-family: "Roboto", sans-serif;
+  font-size: 12px;
+  width: var(--body-width);
+}
+
+li {
+  list-style: none;
+}
+
+.container {
+  padding: 20px 0;
+}
+
+.container #text,
+.container #title,
+.container #cookiesLis {
+  text-align: center;
+}
+
+.container #cookiesList {
+  display: flex;
+  flex-direction: column;
+}
+
+.container #cookiesList li {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px 15px;
+  transition: background-color .2s ease;
+  cursor: pointer;
+  color: #409eff;
+  font-size: 1.8em;
+}
+
+.container #cookiesList li:hover {
+  background-color: #beb6b685;
+}
+
+/* .container #cookiesList .value {
+  color: #409eff;
+  cursor: pointer;
+  outline: none;
+  border: none;
+} */
+
+/* .container #cookiesList .value:active {
+  transform: translateY(1px);
+} */
+
+.container .avatar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.container .avatar img {
+  width: 50px;
+  height: 50px;
+  border-radius: 15px;
+}
+
+.container #text {
+  font-size: 1.5em;
+  font-weight: 300;
+  color: var(--text-color);
+  margin: 10px 0;
+}
+
+
+.container #title{
+  margin: 10px 0;
+}

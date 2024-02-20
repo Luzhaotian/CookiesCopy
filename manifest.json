@@ -1,0 +1,35 @@
+{
+ "name": "Cookies Copy",
+ "description": "复制 Cookies 信息",
+ "version": "1.0",
+ "manifest_version": 3,
+ "action": {
+  "default_popup": "html/popup.html",
+  "default_title": "Cookies Copy",
+  "default_icon": {
+   "16": "image/1.jpg",
+   "32": "image/1.jpg",
+   "48": "image/1.jpg",
+   "128": "image/1.jpg"
+  }
+ },
+ "permissions": [
+  "activeTab",
+  "storage",
+  "contextMenus",
+  "webRequest",
+  "cookies",
+  "tabs"
+ ],
+ "host_permissions": ["http://*/*", "https://*/*"],
+ "icons": {
+  "16": "image/1.jpg",
+  "32": "image/1.jpg",
+  "48": "image/1.jpg",
+  "128": "image/1.jpg"
+ },
+ "background": {
+  "service_worker": "js/background.js"
+ },
+ "options_page": "html/options.html"
+}
