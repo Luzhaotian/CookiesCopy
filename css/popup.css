@@ -6,6 +6,8 @@
 body {
   --body-width: 400px;
   --text-color: #409eff;
+  --btn-text-color: #000000;
+  --btn-text-success-color: rgb(100, 200, 100);
   background: #fff;
   font-family: "Roboto", sans-serif;
   font-size: 12px;
@@ -80,6 +82,37 @@ li {
 }
 
 
-.container #title{
+.container #title {
   margin: 10px 0;
 }
+
+.all-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+}
+
+.all-btn button {
+  width: 30%;
+  height: 30px;
+  background-color: #409eff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 5px;
+  outline: none;
+  border: none;
+  color: var(--btn-text-color);
+}
+
+.all-btn button:active {
+  transform: translateY(1px);
+}
+
+/* .all-btn button.disabled {
+  color: var(--btn-text-success-color);
+  cursor: not-allowed;
+  transform: translateY(0);
+} */
