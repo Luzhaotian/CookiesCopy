@@ -1,166 +1,214 @@
-let time = null,
-  allTime = null,
-  allKeyTime = null,
-  allValueTime = null,
-  myUrlList;
+let cookieList = [];
 
-let successObject = {
-  text: "复制成功",
-  color: "var(--btn-text-success-color)",
+const copy = (text) => {
+  navigator.clipboard?.writeText?.(text);
+};
+
+const showFeedback = (btn, originalText, timerRef) => {
+  if (timerRef.value) clearTimeout(timerRef.value);
+
+  btn.innerText = "复制成功";
+  btn.classList.add("btn--success");
+  btn.style.pointerEvents = "none";
+
+  timerRef.value = setTimeout(() => {
+    btn.innerText = originalText;
+    btn.classList.remove("btn--success");
+    btn.style.pointerEvents = "";
+    timerRef.value = null;
+  }, 1000);
+};
+
+const copyAllCookies = (formatFn) =>
+  cookieList.map(formatFn).filter(Boolean).join("\n");
+
+const formats = {
+  copyAll: (c) => `${c.name}:${c.value};`,
+  copyAllKey: (c) => `${c.name};`,
+  copyAllValue: (c) => `${c.value};`,
+};
+
+// 主题
+const applyTheme = (mode) => {
+  let effective;
+  if (mode === "auto") {
+    effective = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  } else {
+    effective = mode;
+  }
+  document.body.setAttribute("data-theme", effective);
+};
+
+const getSavedTheme = () =>
+  new Promise((resolve) => {
+    if (!chrome.storage?.sync) return resolve(null);
+    chrome.storage.sync.get("themeMode", (result) => {
+      resolve(result.themeMode || null);
+    });
+  });
+
+const initTheme = async () => {
+  const saved = await getSavedTheme();
+  const mode = saved || "auto";
+  document.getElementById("themeSelect").value = mode;
+  applyTheme(mode);
+
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if (document.getElementById("themeSelect").value === "auto") {
+      applyTheme("auto");
+    }
+  });
+};
+
+const setTheme = (mode) => {
+  applyTheme(mode);
+  chrome.storage?.sync?.set({ themeMode: mode });
+};
+
+// Cookie 数量显示
+const updateCookieCount = (total, filtered) => {
+  const countEl = document.getElementById("cookieCount");
+  if (total === 0) {
+    countEl.textContent = "";
+  } else if (filtered !== undefined && filtered !== total) {
+    countEl.textContent = `显示 ${filtered} / ${total} 个 Cookie`;
+  } else {
+    countEl.textContent = `共 ${total} 个 Cookie`;
+  }
+};
+
+// 渲染 Cookie 列表
+const renderCookies = (cookies) => {
+  const cookiesList = document.getElementById("cookiesList");
+  cookiesList.innerHTML = "";
+
+  if (cookies.length > 0) {
+    cookies.forEach(({ name, value }) => {
+      const li = document.createElement("li");
+      li.textContent = name.toUpperCase();
+      li.title = value;
+      cookiesList.appendChild(li);
+    });
+  } else {
+    const li = document.createElement("li");
+    li.textContent = cookieList.length > 0 ? "无匹配结果" : "当前页面无 Cookie";
+    li.classList.add("empty-state");
+    cookiesList.appendChild(li);
+  }
+};
+
+// 搜索过滤
+const filterCookies = (query) => {
+  const q = query.toLowerCase().trim();
+  if (!q) {
+    renderCookies(cookieList);
+    updateCookieCount(cookieList.length);
+    return;
+  }
+  const filtered = cookieList.filter((c) =>
+    c.name.toLowerCase().includes(q)
+  );
+  renderCookies(filtered);
+  updateCookieCount(cookieList.length, filtered.length);
+};
+
+// 导出 JSON 文件
+const exportJson = (hostname) => {
+  const data = cookieList.map((c) => ({
+    name: c.name,
+    value: c.value,
+    domain: c.domain,
+    path: c.path,
+    secure: c.secure,
+    httpOnly: c.httpOnly,
+    sameSite: c.sameSite,
+    expirationDate: c.expirationDate,
+  }));
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cookies-${hostname}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 };
 
 const init = () => {
-  getHtml();
-  setCopy();
-};
+  initTheme();
 
-const copy = (text) => {
-  navigator.clipboard?.writeText && navigator.clipboard.writeText(text);
-};
+  let hostname = "";
 
-const getHtml = () => {
-  const cookiesList = document.getElementById("cookiesList");
-  const hostnm = document.getElementById("hostnm");
-  const title = document.getElementById("title");
-  let html = "";
-  document.addEventListener("DOMContentLoaded", () => {
-    chrome.tabs.query(
-      { active: true, windowId: chrome.windows.WINDOW_ID_CURRENT },
-      function (tabs) {
-        const { origin, hostname, url, domain } = new URL(tabs[0].url);
-        title.innerText = `当前页面：${hostname}`;
-        chrome.cookies.getAll({ url }, (cookies) => {
-          myUrlList = cookies.filter((item) => item.domain === hostname);
-          console.log(myUrlList);
+  chrome.tabs.query(
+    { active: true, windowId: chrome.windows.WINDOW_ID_CURRENT },
+    (tabs) => {
+      const { url } = tabs[0];
+      hostname = new URL(url).hostname;
 
-          if (myUrlList.length > 0) {
-            /**<button class="value" title="${value}">点击复制</button> */
-            /**<div class="name" title="${value}">${name}</div> */
-            myUrlList.forEach(({ name, value }) => {
-              html += `<li title="${value}">${name.toUpperCase()}</li>`;
-            });
-          }
+      document.getElementById("title").innerText = `当前页面：${hostname}`;
 
-          cookiesList.innerHTML = html;
-        });
-      }
-    );
-  });
-};
+      chrome.cookies.getAll({ url }, (cookies) => {
+        cookieList = cookies.filter((item) => item.domain === hostname);
+        renderCookies(cookieList);
+        updateCookieCount(cookieList.length);
+      });
+    }
+  );
 
-const setCopy = () => {
-  const cookiesListClickAddEventListener =
-    document.getElementById("cookiesList");
+  const cookiesListEl = document.getElementById("cookiesList");
   const copyAll = document.getElementById("copyAll");
   const copyAllKey = document.getElementById("copyAllKey");
   const copyAllValue = document.getElementById("copyAllValue");
-  const allBtn = document.getElementById("allBtn");
+  const exportJsonBtn = document.getElementById("exportJson");
+  const themeSelect = document.getElementById("themeSelect");
+  const searchInput = document.getElementById("searchInput");
 
-  cookiesListClickAddEventListener.addEventListener("click", (e) => {
-    const textContent = e.target.textContent;
-    if (e.target.title) copy(e.target.title);
+  const allTimer = { value: null };
+  const keyTimer = { value: null };
+  const valueTimer = { value: null };
 
-    // e.target.style.color = "greenyellow";
-    e.target.style.color = successObject.color;
-    e.target.innerText = successObject.text;
-    // e.target.style.pointerEvents = 'none'
-
-    time = setTimeout(() => {
-      e.target.style.color = "var(--text-color)";
-      e.target.innerText = textContent;
-      // e.target.style.pointerEvents = 'auto'
-    }, 1000);
+  cookiesListEl.addEventListener("click", (e) => {
+    if (!e.target.title) return;
+    copy(e.target.title);
+    const originalText = e.target.textContent;
+    e.target.classList.add("copied");
+    e.target.textContent = "已复制";
+    setTimeout(() => {
+      e.target.classList.remove("copied");
+      e.target.textContent = originalText;
+    }, 800);
   });
 
   copyAll.addEventListener("click", () => {
-    let all = "";
-    if (allTime) {
-      clearTimeout(allTime);
-      allTime = null;
-    }
-
-    myUrlList.forEach(({ name, value }) => {
-      all += `${name}:${value};\n`;
-    });
-
-    if (all) copy(all);
-
-    copyAll.innerText = successObject.text;
-    // copyAll.classList.add("disable");
-    copyAll.style.color = successObject.color;
-    copyAll.setAttribute("disable", true);
-    copyAll.style.cursor = "not-allowed";
-    copyAll.style.transform = "translateY(0)";
-
-    allTime = setTimeout(() => {
-      copyAll.innerText = "Copy All";
-      copyAll.style.color = "var(--btn-text-color)";
-      // copyAll.removeAttribute("disable");
-      copyAll.style.cursor = "pointer";
-      copyAll.style.transform = "translateY(1px)";
-      copyAll.classList.remove("disable");
-      clearTimeout(allTime);
-    }, 1000);
+    const text = copyAllCookies(formats.copyAll);
+    if (text) copy(text);
+    showFeedback(copyAll, "全部复制", allTimer);
   });
 
   copyAllKey.addEventListener("click", () => {
-    let allKey = "";
-    if (allKeyTime) {
-      clearTimeout(allKeyTime);
-      allKeyTime = null;
-    }
-    myUrlList.forEach(({ name, value }) => {
-      allKey += `${name};\n`;
-    });
-
-    if (allKey) copy(allKey);
-
-    copyAllKey.innerText = successObject.text;
-    // copyAll.classList.add("disable");
-    copyAllKey.style.color = successObject.color;
-    copyAllKey.setAttribute("disable", true);
-    copyAllKey.style.cursor = "not-allowed";
-    copyAllKey.style.transform = "translateY(0)";
-
-    allKeyTime = setTimeout(() => {
-      copyAllKey.innerText = "Copy All Key";
-      copyAllKey.style.color = "var(--btn-text-color)";
-      // copyAll.removeAttribute("disable");
-      copyAllKey.style.cursor = "pointer";
-      copyAllKey.style.transform = "translateY(1px)";
-      copyAllKey.classList.remove("disable");
-      clearTimeout(allKeyTime);
-    }, 1000);
+    const text = copyAllCookies(formats.copyAllKey);
+    if (text) copy(text);
+    showFeedback(copyAllKey, "复制键名", keyTimer);
   });
 
   copyAllValue.addEventListener("click", () => {
-    let allValue = "";
-    if (allValueTime) {
-      clearTimeout(allValueTime);
-      allValueTime = null;
-    }
-    myUrlList.forEach(({ name, value }) => {
-      allValue += `${value};\n`;
-    });
+    const text = copyAllCookies(formats.copyAllValue);
+    if (text) copy(text);
+    showFeedback(copyAllValue, "复制值", valueTimer);
+  });
 
-    if (allValue) copy(allValue);
+  exportJsonBtn.addEventListener("click", () => {
+    exportJson(hostname);
+  });
 
-    copyAllValue.innerText = successObject.text;
-    // copyAll.classList.add("disable");
-    copyAllValue.style.color = successObject.color;
-    copyAllValue.setAttribute("disable", true);
-    copyAllValue.style.cursor = "not-allowed";
-    copyAllValue.style.transform = "translateY(0)";
+  themeSelect.addEventListener("change", (e) => {
+    setTheme(e.target.value);
+  });
 
-    allValueTime = setTimeout(() => {
-      copyAllValue.innerText = "Copy All Key";
-      copyAllValue.style.color = "var(--btn-text-color)";
-      // copyAll.removeAttribute("disable");
-      copyAllValue.style.cursor = "pointer";
-      copyAllValue.style.transform = "translateY(1px)";
-      copyAllValue.classList.remove("disable");
-      clearTimeout(allValueTime);
-    }, 1000);
+  searchInput.addEventListener("input", (e) => {
+    filterCookies(e.target.value);
   });
 };
 

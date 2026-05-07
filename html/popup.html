@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,18 +9,36 @@
 
   <body>
     <div class="container">
-      <div class="avatar">
-        <img src="../image/1.jpg" alt="" title="头像" />
+      <div class="header">
+        <div class="header-top">
+          <h1 class="title">Cookies Copy</h1>
+          <select class="theme-select" id="themeSelect" title="主题模式">
+            <option value="auto">自动</option>
+            <option value="light">浅色</option>
+            <option value="dark">深色</option>
+          </select>
+        </div>
+        <p class="domain" id="title"></p>
+        <p class="cookie-count" id="cookieCount"></p>
       </div>
-      <div class="all-btn" id="allBtn">
-        <button id="copyAllKey">Copy All Key</button>
-        <button id="copyAll">Copy All</button>
-        <button id="copyAllValue">Copy All Value</button>
+      <div class="search-box">
+        <input
+          type="text"
+          class="search-input"
+          id="searchInput"
+          placeholder="搜索 cookie..."
+        />
       </div>
-      <h1 id="text">Cookies Copy</h1>
-      <h2 id="title"></h2>
-      <ul id="cookiesList"></ul>
+      <div class="actions">
+        <button class="btn" id="copyAllKey">复制键名</button>
+        <button class="btn btn--primary" id="copyAll">全部复制</button>
+        <button class="btn" id="copyAllValue">复制值</button>
+      </div>
+      <div class="actions">
+        <button class="btn" id="exportJson">导出 JSON</button>
+      </div>
+      <ul class="cookies-list" id="cookiesList"></ul>
     </div>
+    <script type="text/javascript" src="../js/popup.js"></script>
   </body>
-  <script type="text/javascript" src="../js/popup.js"></script>
 </html>

@@ -15,10 +15,8 @@
  },
  "permissions": [
   "activeTab",
-  "storage",
-  "contextMenus",
-  "webRequest",
   "cookies",
+  "storage",
   "tabs"
  ],
  "host_permissions": ["http://*/*", "https://*/*"],
@@ -27,9 +25,5 @@
   "32": "image/1.jpg",
   "48": "image/1.jpg",
   "128": "image/1.jpg"
- },
- "background": {
-  "service_worker": "js/background.js"
- },
- "options_page": "html/options.html"
+ }
 }
